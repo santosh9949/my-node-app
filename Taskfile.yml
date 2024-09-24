@@ -1,0 +1,70 @@
+version: '3'
+
+tasks:
+  install-dependencies:
+    desc: "Install project dependencies"
+    cmds:
+      - npm install
+    silent: true
+
+  sonarqube:
+    desc: "Run SonarQube scan"
+    cmds:
+      - |
+        sonar-scanner \
+          -Dsonar.projectKey=my-node-app \
+          -Dsonar.sources=. \
+          -Dsonar.host.url=http://localhost:9000 \
+          -Dsonar.login=$SONARQUBE_TOKEN
+    env:
+      SONARQUBE_TOKEN: "{{.SONARQUBE_TOKEN}}" 
+    preconditions:
+      - cmd: sonar-scanner -v
+        msg: "SonarQube CLI is not installed. Please install it."
+
+  trivy-scan:
+    desc: "Run Trivy vulnerability scan"
+    cmds:
+      - trivy fs .
+    preconditions:
+      - cmd: trivy --version
+        msg: "Trivy is not installed. Please install it."
+
+  fuzz-test:
+    desc: "Run fuzz testing"
+    cmds:
+      - npm run test:fuzz
+    preconditions:
+      - cmd: npm run test:fuzz
+        msg: "Fuzz test script is not defined in package.json."
+
+  unit-test:
+    desc: "Run unit tests"
+    cmds:
+      - npm test
+
+  postman-api:
+    desc: "Run Postman API tests"
+    cmds:
+      - newman run path/to/your/postman_collection.json
+
+  zap-scan:
+    desc: "Run OWASP ZAP scan"
+    cmds:
+      - zap-cli quick-scan --self-contained http://localhost:3000
+    preconditions:
+      - cmd: zap-cli --version
+        msg: "OWASP ZAP CLI is not installed. Please install it."
+
+  renovate:
+    desc: "Run Renovate for dependency updates"
+    cmds:
+      - renovate
+    preconditions:
+      - cmd: renovate --version
+        msg: "Renovate CLI is not installed. Please install it."
+
+  all:
+    desc: "Run all tasks"
+    deps: [install-dependencies, sonarqube, trivy-scan, fuzz-test, unit-test, postman-api, zap-scan, renovate]
+
